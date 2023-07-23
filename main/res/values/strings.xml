@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Alert Button End</string>
+    <string name="home">Home</string>
+    <string name="settings">Settings</string>
+    <string name="general_settings">General settings</string>
+    <string name="update_time">Update time</string>
+    <string name="update_time_summary">Location GPS update time</string>
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="choose_color">Choose your color</string>
+</resources>
