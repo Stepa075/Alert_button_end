@@ -5,6 +5,7 @@ import android.content.Context
 import com.stepa0751.alertbuttonend.R
 
 object DialogManager {
+//    Функция вызова диалога о включении GPS
     fun showLocEnableDialog(context: Context, listener: Listener) {
         val builder = AlertDialog.Builder(context)
         val dialog = builder.create()
@@ -16,7 +17,7 @@ object DialogManager {
         }
         dialog.show()
     }
-
+//    Интерфейс слушателя вызова диалога о включении GPS
     interface Listener{
         fun onClick()
     }

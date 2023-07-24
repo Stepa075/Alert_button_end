@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentActivity
 import com.stepa0751.alertbuttonend.R
 
 
@@ -43,7 +44,7 @@ fun Fragment.showToast(s: String){
 fun AppCompatActivity.showToast(s: String){
     Toast.makeText(this, s, Toast.LENGTH_SHORT).show()
 }
-
+//  Функция определения даны ли разрешения
 fun Fragment.checkPermission(p: String): Boolean{
     return when(PackageManager.PERMISSION_GRANTED){
         ContextCompat.checkSelfPermission(activity as AppCompatActivity, p) -> true

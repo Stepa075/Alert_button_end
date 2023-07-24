@@ -18,6 +18,7 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.stepa0751.alertbuttonend.databinding.FragmentMapBinding
+import com.stepa0751.alertbuttonend.location.LocationService
 import com.stepa0751.alertbuttonend.utils.DialogManager
 import com.stepa0751.alertbuttonend.utils.checkPermission
 import com.stepa0751.alertbuttonend.utils.showToast
@@ -45,6 +46,11 @@ class MapFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         registerPermissions()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            activity?.startForegroundService(Intent(activity, LocationService::class.java))
+        }else{
+            activity?.startService(Intent(activity, LocationService::class.java))
+        }
 
     }
 
@@ -74,7 +80,7 @@ class MapFragment : Fragment() {
             map.overlays.add(myLocOverlay)
         }
     }
-
+//  Нихрена эта функция не срабатывает. Запрос на разрешения не появляется.
     private fun registerPermissions() {
         pLauncher = registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions()) {
@@ -88,7 +94,7 @@ class MapFragment : Fragment() {
             }
         }
     }
-
+//   Функция выбора пермиссинов в зависимости от версии андроида
     private fun checkLocPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             checkPermissionAfter10()
@@ -96,7 +102,7 @@ class MapFragment : Fragment() {
             checkPermissionBefore10()
         }
     }
-
+//   Если больше или равно 10 версии андроида
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun checkPermissionAfter10() {
         if (checkPermission(ACCESS_FINE_LOCATION)
@@ -112,7 +118,7 @@ class MapFragment : Fragment() {
         }
     }
 
-
+//   Если меньше 10 версии андроида
     private fun checkPermissionBefore10() {
         if (checkPermission(ACCESS_FINE_LOCATION)) {
             initOsm()
@@ -121,7 +127,7 @@ class MapFragment : Fragment() {
             pLauncher.launch(arrayOf(ACCESS_FINE_LOCATION))
         }
     }
-
+//    Определение включен ли GPS и вызов диалог менеджера, если выключен
     private fun checkLocationEnabled(){
         val lManager = activity?.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         val isEnabled = lManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
