@@ -20,5 +20,12 @@
             android:key="color_key"
             android:title="@string/choose_color"
             app:icon="@drawable/ic_circle" />
+
+        <EditTextPreference
+            android:defaultValue=""
+            android:title="Your ID is"
+            android:key="id_user_key"
+            app:icon="@drawable/ic_id_user"
+            app:summary="Change your ID here"/>
     </PreferenceCategory>
 </PreferenceScreen>

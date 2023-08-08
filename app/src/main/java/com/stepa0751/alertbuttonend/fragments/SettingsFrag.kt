@@ -5,10 +5,11 @@ import android.os.Bundle
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import com.stepa0751.alertbuttonend.R
-import com.stepa0751.alertbuttonend.utils.showToast
+
 
 class SettingsFrag : PreferenceFragmentCompat(){
     private lateinit var timePref: Preference
+    private lateinit var idPref: Preference
     private lateinit var colorPref: Preference
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.main_preference, rootKey)
@@ -21,8 +22,10 @@ class SettingsFrag : PreferenceFragmentCompat(){
     private fun init(){
         timePref = findPreference("update_time_key")!!
         colorPref = findPreference("color_key")!!
+        idPref = findPreference("id_user_key")!!
         val changeListener = onChangeListener()
         timePref.onPreferenceChangeListener = changeListener
+        idPref.onPreferenceChangeListener = changeListener
 
         colorPref.onPreferenceChangeListener = changeListener
         initPrefs()
@@ -32,6 +35,7 @@ class SettingsFrag : PreferenceFragmentCompat(){
     return Preference.OnPreferenceChangeListener { pref, value ->
             when(pref.key){
                 "update_time_key" -> onTimeChange(value.toString())
+                "id_user_key" -> onIdChange(value.toString())
                     // здесь меняем цвет иконки лямбдой, даже не создавая отдельную функцию
                 "color_key" -> pref.icon?.setTint(Color.parseColor(value.toString()))
             }
@@ -44,19 +48,31 @@ class SettingsFrag : PreferenceFragmentCompat(){
         val valueArray = resources.getStringArray(R.array.loc_time_update_value)
         val title = timePref.title.toString().substringBefore(":")
         timePref.title = "$title: ${nameArray[valueArray.indexOf(value)]}"
+
+    }
+
+    private fun onIdChange(value: String) {
+//        val id_pref = idPref.preferenceManager.sharedPreferences
+        val title1 = idPref.title.toString().substringBefore(":")
+        idPref.title = "$title1: ${value}"
     }
 
 
 
 //   настраиваем показ сохраненных цифр и всего прочего при запуске экрана с настройками
     private fun initPrefs(){
+
+        val id_pref = idPref.preferenceManager.sharedPreferences
         val pref = timePref.preferenceManager.sharedPreferences
         val nameArray = resources.getStringArray(R.array.loc_time_update_name)
         val valueArray = resources.getStringArray(R.array.loc_time_update_value)
         val title = timePref.title
         timePref.title = "$title: ${nameArray[valueArray.indexOf(pref?.getString("update_time_key", "5000") )]}"
 
-        val color = pref?.getString("color_key", "#0636C3")
+        val id_title = idPref.title
+        idPref.title = "$id_title: ${id_pref?.getString("id_user_key", "0")}"
+
+    val color = pref?.getString("color_key", "#0636C3")
         colorPref.icon?.setTint(Color.parseColor(color))
     }
 

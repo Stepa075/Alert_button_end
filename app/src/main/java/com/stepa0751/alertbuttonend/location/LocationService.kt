@@ -51,7 +51,7 @@ class LocationService : Service() {
             this,
             CHANNEL_ID
         ).setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle("Tracker running")
+            .setContentTitle("Alarm tracker running")
             .setContentIntent(pIntent).build()
         startForeground(99, notification)
     }

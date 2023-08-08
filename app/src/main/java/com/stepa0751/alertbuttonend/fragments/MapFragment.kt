@@ -17,6 +17,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import com.stepa0751.alertbuttonend.R
 import com.stepa0751.alertbuttonend.databinding.FragmentMapBinding
 import com.stepa0751.alertbuttonend.location.LocationService
 import com.stepa0751.alertbuttonend.utils.DialogManager
@@ -46,14 +47,9 @@ class MapFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         registerPermissions()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            activity?.startForegroundService(Intent(activity, LocationService::class.java))
-        }else{
-            activity?.startService(Intent(activity, LocationService::class.java))
-        }
+
 
     }
-
     override fun onResume() {
         super.onResume()
         checkLocPermission()
@@ -70,7 +66,7 @@ class MapFragment : Fragment() {
 
     //  Настройка отображения карт......... Посмотреть документацию!!!
     private fun initOsm() = with(binding) {
-        map.controller.setZoom(20.0)
+        map.controller.setZoom(18.0)
         val myLocProvider = GpsMyLocationProvider(activity)
         val myLocOverlay = MyLocationNewOverlay(myLocProvider, map)
         myLocOverlay.enableMyLocation()
@@ -109,6 +105,7 @@ class MapFragment : Fragment() {
             && checkPermission(ACCESS_BACKGROUND_LOCATION)) {
             initOsm()
             checkLocationEnabled()
+
         } else {
             pLauncher.launch(arrayOf(
                     ACCESS_FINE_LOCATION,
