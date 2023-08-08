@@ -52,9 +52,8 @@ class SettingsFrag : PreferenceFragmentCompat(){
     }
 
     private fun onIdChange(value: String) {
-//        val id_pref = idPref.preferenceManager.sharedPreferences
-        val title1 = idPref.title.toString().substringBefore(":")
-        idPref.title = "$title1: ${value}"
+        val title = idPref.title.toString().substringBefore(":")
+        idPref.title = "$title: ${value}"
     }
 
 
@@ -72,7 +71,7 @@ class SettingsFrag : PreferenceFragmentCompat(){
         val id_title = idPref.title
         idPref.title = "$id_title: ${id_pref?.getString("id_user_key", "0")}"
 
-    val color = pref?.getString("color_key", "#0636C3")
+        val color = pref?.getString("color_key", "#0636C3")
         colorPref.icon?.setTint(Color.parseColor(color))
     }
 
