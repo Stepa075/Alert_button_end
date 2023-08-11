@@ -43,6 +43,7 @@ class MainFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         registerPermissions()
         setOnClicks()
+        checkServiceState()
     }
 
     override fun onResume() {
@@ -73,6 +74,13 @@ class MainFragment : Fragment() {
             binding.startStop.setImageResource(R.drawable.ic_disalarm_green)
         }
         isServiceRunning = !isServiceRunning
+    }
+
+    private fun checkServiceState(){
+        isServiceRunning = LocationService.isRunning
+        if(isServiceRunning){
+            binding.startStop.setImageResource(R.drawable.ic_alarm_red)
+        }
     }
 
     private fun startLocService(){
