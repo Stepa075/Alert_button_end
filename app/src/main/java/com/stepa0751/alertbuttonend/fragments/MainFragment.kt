@@ -15,16 +15,22 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.MutableLiveData
 import com.stepa0751.alertbuttonend.R
 import com.stepa0751.alertbuttonend.databinding.FragmentMainBinding
 import com.stepa0751.alertbuttonend.location.LocationService
 import com.stepa0751.alertbuttonend.utils.DialogManager
+import com.stepa0751.alertbuttonend.utils.TimeUtils
 import com.stepa0751.alertbuttonend.utils.checkPermission
 import com.stepa0751.alertbuttonend.utils.showToast
+import java.util.Timer
+import java.util.TimerTask
 
 
 class MainFragment : Fragment() {
-
+    private var timer: Timer? = null
+    private var startTime = 0L
+    val timeData = MutableLiveData<String>()
     private lateinit var pLauncher: ActivityResultLauncher<Array<String>>
     //    Создаем переменную binding
     private lateinit var binding: FragmentMainBinding
@@ -44,6 +50,7 @@ class MainFragment : Fragment() {
         registerPermissions()
         setOnClicks()
         checkServiceState()
+        updateTime()
     }
 
     override fun onResume() {
@@ -66,12 +73,38 @@ class MainFragment : Fragment() {
         }
     }
 
+    private fun updateTime(){
+        timeData.observe(viewLifecycleOwner){
+        binding.tvTime.text = it
+        }
+    }
+
+    private fun startTimer(){
+        timer?.cancel()
+        timer = Timer()
+        startTime = System.currentTimeMillis()
+        timer?.schedule(object : TimerTask(){
+            override fun run(){
+            activity?.runOnUiThread{
+                timeData.value = getCurrentTime()
+            }
+            }
+        }, 1000, 1000)
+    }
+
+    private fun getCurrentTime(): String{
+        return "Elapsed time: ${TimeUtils.getTime(System.currentTimeMillis() - startTime)}"
+    }
+
+
+
     private fun startStopService(){
         if(!isServiceRunning){
             startLocService()
         }else{
             activity?.stopService(Intent(activity, LocationService::class.java))
             binding.startStop.setImageResource(R.drawable.ic_disalarm_green)
+            timer?.cancel()
         }
         isServiceRunning = !isServiceRunning
     }
@@ -90,6 +123,7 @@ class MainFragment : Fragment() {
             activity?.startService(Intent(activity, LocationService::class.java))
         }
         binding.startStop.setImageResource(R.drawable.ic_alarm_red)
+        startTimer()
     }
 
 
