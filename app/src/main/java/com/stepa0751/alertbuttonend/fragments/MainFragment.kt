@@ -35,6 +35,8 @@ class MainFragment : Fragment() {
     //    Создаем переменную binding
     private lateinit var binding: FragmentMainBinding
     private var isServiceRunning = false
+
+    // Надуваем инфлейтер и получаем доступ ко всем элементов вью
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -44,90 +46,20 @@ class MainFragment : Fragment() {
         // полцчаем доступ ко всем элементам разметки
         return binding.root
     }
-
+    //  Инициализируем все, что необходимо после создания вью
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         registerPermissions()
-        setOnClicks()
         checkServiceState()
+        setOnClicks()
         updateTime()
     }
-
+    //  Когда возвращаемся в вью проверяем доступность местонахождения в телефоне
     override fun onResume() {
         super.onResume()
         checkLocPermission()
 
     }
-
-
-     fun setOnClicks() = with(binding){
-        val listener = onClicks()
-     startStop.setOnClickListener(listener)
-    }
-
-    private fun onClicks(): View.OnClickListener{
-        return View.OnClickListener {
-            when(it.id){
-                R.id.start_stop -> startStopService()
-            }
-        }
-    }
-
-    private fun updateTime(){
-        timeData.observe(viewLifecycleOwner){
-        binding.tvTime.text = it
-        }
-    }
-
-    private fun startTimer(){
-        timer?.cancel()
-        timer = Timer()
-        startTime = System.currentTimeMillis()
-        timer?.schedule(object : TimerTask(){
-            override fun run(){
-            activity?.runOnUiThread{
-                timeData.value = getCurrentTime()
-            }
-            }
-        }, 1000, 1000)
-    }
-
-    private fun getCurrentTime(): String{
-        return "Elapsed time: ${TimeUtils.getTime(System.currentTimeMillis() - startTime)}"
-    }
-
-
-
-    private fun startStopService(){
-        if(!isServiceRunning){
-            startLocService()
-        }else{
-            activity?.stopService(Intent(activity, LocationService::class.java))
-            binding.startStop.setImageResource(R.drawable.ic_disalarm_green)
-            timer?.cancel()
-        }
-        isServiceRunning = !isServiceRunning
-    }
-
-    private fun checkServiceState(){
-        isServiceRunning = LocationService.isRunning
-        if(isServiceRunning){
-            binding.startStop.setImageResource(R.drawable.ic_alarm_red)
-        }
-    }
-
-    private fun startLocService(){
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            activity?.startForegroundService(Intent(activity, LocationService::class.java))
-        }else{
-            activity?.startService(Intent(activity, LocationService::class.java))
-        }
-        binding.startStop.setImageResource(R.drawable.ic_alarm_red)
-        startTimer()
-    }
-
-
-
 
     private fun registerPermissions() {
         pLauncher = registerForActivityResult(
@@ -144,6 +76,60 @@ class MainFragment : Fragment() {
     }
 
 
+    private fun checkServiceState(){
+        isServiceRunning = LocationService.isRunning
+        if(isServiceRunning){
+            binding.startStop.setImageResource(R.drawable.ic_alarm_red)
+        }
+    }
+
+
+    //  Функция инициализации слушателя нажатий для ВСЕГО ВЬЮ
+    fun setOnClicks() = with(binding){
+        val listener = onClicks()
+        startStop.setOnClickListener(listener)
+    }
+
+    //  Функция сработки слушателя нажатий на этом вью
+    private fun onClicks(): View.OnClickListener{
+        return View.OnClickListener {
+            when(it.id){
+                R.id.start_stop -> startStopService()
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+    //  Обновление времени в tv_text с помощью обсервера, который слушает изменения в переменной timeData типа MutableLiveData<String>()
+    private fun updateTime(){
+        timeData.observe(viewLifecycleOwner){
+            binding.tvTime.text = it
+        }
+    }
+
+
+    //  Запуск таймера, который (если что-то там есть) возьмет startTime из LocationService.startTime
+    //  И запускать нужно в основном потоке, иначе значения в текст вью меняться не будут!
+    private fun startTimer(){
+        timer?.cancel()
+        timer = Timer()
+        startTime = LocationService.startTime
+        timer?.schedule(object : TimerTask(){
+            override fun run(){
+                activity?.runOnUiThread{
+                    timeData.value = getCurrentTime()
+                }
+            }
+        }, 1000, 1000)
+    }
+
+    //  Функция выбора набора разрешений для более старых и новых версий андроид
     private fun checkLocPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             checkPermissionAfter10()
@@ -196,6 +182,48 @@ class MainFragment : Fragment() {
             showToast("Location enabled")
         }
     }
+    //  Здесь получаем время следования по маршруту, если приложение закрыли и работал только сервис
+    //  От текущего времени отнимаем стартовое (все в миллисекундах!!!)
+    private fun getCurrentTime(): String{
+        return "Elapsed time: ${TimeUtils.getTime(System.currentTimeMillis() - startTime)}"
+    }
+
+
+    //  Функция запуска и остановки сервиса, в зависимости от состояния переменной isServiceRunning
+    private fun startStopService(){
+        if(!isServiceRunning){
+//            Здесь я подставил включение зеленой кнопки, зачем??????
+            binding.startStop.setImageResource(R.drawable.ic_disalarm_green)
+            startLocService()
+        }else{
+            activity?.stopService(Intent(activity, LocationService::class.java))
+            binding.startStop.setImageResource(R.drawable.ic_disalarm_green)
+            timer?.cancel()
+        }
+        isServiceRunning = !isServiceRunning
+    }
+
+
+    //  Запуск сервиса, в зависимости от нажатия на кнопку "старт" или "стоп"
+    private fun startLocService(){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            activity?.startForegroundService(Intent(activity, LocationService::class.java))
+//            Здесь я подставил включение красной кнопки, зачем??????
+            binding.startStop.setImageResource(R.drawable.ic_alarm_red)
+        }else{
+            activity?.startService(Intent(activity, LocationService::class.java))
+        }
+        binding.startStop.setImageResource(R.drawable.ic_alarm_red)
+        LocationService.startTime = System.currentTimeMillis()
+        startTimer()
+    }
+
+
+
+
+
+
+
 
 
 

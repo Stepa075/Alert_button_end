@@ -1,5 +1,6 @@
 package com.stepa0751.alertbuttonend.location
 
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -8,14 +9,23 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import com.google.android.gms.location.*
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.LocationServices.getFusedLocationProviderClient
+
 import com.stepa0751.alertbuttonend.MainActivity
 import com.stepa0751.alertbuttonend.R
 
 //  Создали сервис для работы в фоновом режиме... В манифесте его нужно прописать!!!
 class LocationService : Service() {
+//    Эта переменная нужна для того, чтобы подключаться к провайдеру GPS и получать у него данные о местоположении
+//  И она нихрена без параметров не регистрируется в классе!!!
+    @SuppressLint("VisibleForTests")
+   private var locProvider = getFusedLocationProviderClient(baseContext)
     override fun onBind(p0: Intent?): IBinder? {
         return null
     }
+
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startNotification()
@@ -25,6 +35,7 @@ class LocationService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        initLocation()
     }
 
     override fun onDestroy() {
@@ -58,8 +69,18 @@ class LocationService : Service() {
         startForeground(99, notification)
     }
 
+
+    private fun initLocation(){
+        locProvider = LocationServices.getFusedLocationProviderClient(baseContext)
+    }
+
+    private fun startLocationUpdates(){
+//        locProvider.requestLocationUpdates()
+    }
+
     companion object {
         const val CHANNEL_ID = "channel_1"
         var isRunning = false
+        var startTime = 0L
     }
 }
