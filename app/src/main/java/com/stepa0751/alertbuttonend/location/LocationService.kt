@@ -14,6 +14,7 @@ import android.os.Looper
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -22,6 +23,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY
 import com.stepa0751.alertbuttonend.MainActivity
 import com.stepa0751.alertbuttonend.R
+import org.osmdroid.util.GeoPoint
 
 //  Создали сервис для работы в фоновом режиме... В манифесте его нужно прописать!!!
 class LocationService : Service() {
@@ -32,6 +34,7 @@ class LocationService : Service() {
     //    Эта переменная нужна для того, чтобы подключаться к провайдеру GPS и получать у него данные о местоположении
     private lateinit var locProvider: FusedLocationProviderClient
     private lateinit var locRequest: LocationRequest
+    private lateinit var geoPointsList: ArrayList<GeoPoint>
     override fun onBind(p0: Intent?): IBinder? {
         return null
     }
@@ -46,6 +49,7 @@ class LocationService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        geoPointsList = ArrayList()
         initLocation()
     }
 
@@ -105,18 +109,38 @@ class LocationService : Service() {
         override fun onLocationResult(lResult: LocationResult) {
             super.onLocationResult(lResult)
             val currentLocation = lResult.lastLocation
-            if (lastLocation != null) {
-                if((currentLocation?.speed ?: 0.0f) > 0.5)distance += (currentLocation ?: lastLocation)?.let { lastLocation?.distanceTo(it) }!!
+            if (lastLocation != null && currentLocation != null) {
+                if ((currentLocation?.speed ?: 0.0f) > 0.5) distance += (currentLocation
+                    ?: lastLocation)?.let { lastLocation?.distanceTo(it) }!!
+                geoPointsList.add(GeoPoint(currentLocation.latitude, currentLocation.longitude))
+                val locModel = LocationModel(
+                    currentLocation.speed,
+                    distance,
+                    currentLocation.latitude.toFloat(),
+                    currentLocation.longitude.toFloat(),
+                    geoPointsList
+                )
+                sendLocData(locModel)
+
             }
             lastLocation = currentLocation
+
+
             Log.d(
-                "MyLog", "Location: ${lResult.lastLocation?.latitude} : ${lResult.lastLocation?.longitude}"
+                "MyLog",
+                "Location: ${lResult.lastLocation?.latitude} : ${lResult.lastLocation?.longitude}"
 
             )
             Log.d("MyLog", "Distance: $distance")
 
         }
 
+    }
+
+    private fun sendLocData(locModel: LocationModel){
+        val i = Intent(LOC_MODEL_INTENT)
+        i.putExtra(LOC_MODEL_INTENT, locModel)
+        LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(i)
     }
 
     //  Функция запуска слушателя местоположения, для нее нужны несколько параметров:
@@ -142,6 +166,7 @@ class LocationService : Service() {
 
     companion object {
         const val CHANNEL_ID = "channel_1"
+        const val LOC_MODEL_INTENT = "loc_intent"
         var isRunning = false
         var startTime = 0L
     }
