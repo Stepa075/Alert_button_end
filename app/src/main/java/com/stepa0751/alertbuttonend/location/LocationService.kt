@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.Location
 import android.os.Build
 import android.os.IBinder
 import android.os.Looper
@@ -24,8 +25,11 @@ import com.stepa0751.alertbuttonend.R
 
 //  Создали сервис для работы в фоновом режиме... В манифесте его нужно прописать!!!
 class LocationService : Service() {
-//    Эта переменная нужна для того, чтобы подключаться к провайдеру GPS и получать у него данные о местоположении
-
+    //  Переменная для хранения последнего местоположения для измерения расстояния между старой и новой точками
+    private var lastLocation: Location? = null
+    //  Переменная для хранения высчтанного расстояния
+    private var distance = 0.0f
+    //    Эта переменная нужна для того, чтобы подключаться к провайдеру GPS и получать у него данные о местоположении
     private lateinit var locProvider: FusedLocationProviderClient
     private lateinit var locRequest: LocationRequest
     override fun onBind(p0: Intent?): IBinder? {
@@ -47,9 +51,9 @@ class LocationService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-//  Переменную "работает" делаем ложь
+        //  Переменную "работает" делаем ложь
         isRunning = false
-//  Отписываеся от обновлений местоположения
+        //  Отписываеся от обновлений местоположения
         locProvider.removeLocationUpdates(locCallBack)
     }
 
@@ -97,11 +101,22 @@ class LocationService : Service() {
     }
 
     // Сюда приходит информация о местоположении в lResult
-    private val locCallBack = object : LocationCallback(){
+    private val locCallBack = object : LocationCallback() {
         override fun onLocationResult(lResult: LocationResult) {
             super.onLocationResult(lResult)
-            Log.d("MyLog", " Location: ${lResult.lastLocation?.latitude} : ${lResult.lastLocation?.longitude}")
+            val currentLocation = lResult.lastLocation
+            if (lastLocation != null) {
+                if((currentLocation?.speed ?: 0.0f) > 0.5)distance += (currentLocation ?: lastLocation)?.let { lastLocation?.distanceTo(it) }!!
+            }
+            lastLocation = currentLocation
+            Log.d(
+                "MyLog", "Location: ${lResult.lastLocation?.latitude} : ${lResult.lastLocation?.longitude}"
+
+            )
+            Log.d("MyLog", "Distance: $distance")
+
         }
+
     }
 
     //  Функция запуска слушателя местоположения, для нее нужны несколько параметров:
@@ -115,13 +130,13 @@ class LocationService : Service() {
         ) return
 
         locProvider.requestLocationUpdates(
-            //  Этот параметр получаем в initLocation
-            locRequest,
-            // Сюда будет приходить информация о нашем местоположении
-            locCallBack,
-            //  И лупер нужен, чтобы повторять поток запроса инфы о местоположении,
-            // т.к. поток закрывается после выполнения всех команд в нем.
-            Looper.myLooper()
+        //  Этот параметр получаем в initLocation
+        locRequest,
+        // Сюда будет приходить информация о нашем местоположении
+        locCallBack,
+        //  И лупер нужен, чтобы повторять поток запроса инфы о местоположении,
+        // т.к. поток закрывается после выполнения всех команд в нем.
+        Looper.myLooper()
         )
     }
 
