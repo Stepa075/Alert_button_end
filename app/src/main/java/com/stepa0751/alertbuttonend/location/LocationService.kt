@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
@@ -15,6 +16,9 @@ import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.android.volley.Request
+import com.android.volley.toolbox.StringRequest
+import com.android.volley.toolbox.Volley
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -129,12 +133,9 @@ class LocationService : Service() {
             Log.d(
                 "MyLog",
                 "Location: ${lResult.lastLocation?.latitude} : ${lResult.lastLocation?.longitude}"
-
             )
-            Log.d("MyLog", "Distance: $distance")
 
         }
-
     }
 
     private fun sendLocData(locModel: LocationModel){
@@ -162,6 +163,22 @@ class LocationService : Service() {
         // т.к. поток закрывается после выполнения всех команд в нем.
         Looper.myLooper()
         )
+    }
+
+    private fun getData() {
+//        val api = "38b27a1546ab4bb5a9364709232202"
+        val url = "https://api.weatherapi.com/v1/forecast.json?key=&days=3&aqi=no&alerts=no"
+        val queue = Volley.newRequestQueue(baseContext)
+        val sRequest = StringRequest(
+            Request.Method.GET,
+            url, { response ->
+//                val list = getWeatherByDays(response)
+//                dayList.value = list
+//                currentDay.value = list[0]
+            },
+            { Log.d("MyLog", "Error request: $it") }
+        )
+        queue.add(sRequest)
     }
 
     companion object {

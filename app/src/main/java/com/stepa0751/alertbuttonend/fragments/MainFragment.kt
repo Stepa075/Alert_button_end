@@ -1,12 +1,15 @@
 package com.stepa0751.alertbuttonend.fragments
 
 import android.Manifest
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -16,9 +19,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.MutableLiveData
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.google.android.gms.location.LocationCallback
 import com.stepa0751.alertbuttonend.R
 import com.stepa0751.alertbuttonend.databinding.FragmentMainBinding
+import com.stepa0751.alertbuttonend.location.LocationModel
 import com.stepa0751.alertbuttonend.location.LocationService
+import com.stepa0751.alertbuttonend.location.LocationService.Companion.LOC_MODEL_INTENT
 import com.stepa0751.alertbuttonend.utils.DialogManager
 import com.stepa0751.alertbuttonend.utils.TimeUtils
 import com.stepa0751.alertbuttonend.utils.checkPermission
@@ -32,6 +39,7 @@ class MainFragment : Fragment() {
     private var startTime = 0L
     val timeData = MutableLiveData<String>()
     private lateinit var pLauncher: ActivityResultLauncher<Array<String>>
+
     //    Создаем переменную binding
     private lateinit var binding: FragmentMainBinding
     private var isServiceRunning = false
@@ -46,6 +54,7 @@ class MainFragment : Fragment() {
         // полцчаем доступ ко всем элементам разметки
         return binding.root
     }
+
     //  Инициализируем все, что необходимо после создания вью
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -53,7 +62,9 @@ class MainFragment : Fragment() {
         checkServiceState()
         setOnClicks()
         updateTime()
+        registerLocReceiver()
     }
+
     //  Когда возвращаемся в вью проверяем доступность местонахождения в телефоне
     override fun onResume() {
         super.onResume()
@@ -63,7 +74,8 @@ class MainFragment : Fragment() {
 
     private fun registerPermissions() {
         pLauncher = registerForActivityResult(
-            ActivityResultContracts.RequestMultiplePermissions()) {
+            ActivityResultContracts.RequestMultiplePermissions()
+        ) {
 
             if (it[Manifest.permission.ACCESS_FINE_LOCATION] == true) {
 //                initOsm()
@@ -76,39 +88,33 @@ class MainFragment : Fragment() {
     }
 
 
-    private fun checkServiceState(){
+    private fun checkServiceState() {
         isServiceRunning = LocationService.isRunning
-        if(isServiceRunning){
+        if (isServiceRunning) {
             binding.startStop.setImageResource(R.drawable.ic_alarm_red)
         }
     }
 
 
     //  Функция инициализации слушателя нажатий для ВСЕГО ВЬЮ
-    fun setOnClicks() = with(binding){
+    fun setOnClicks() = with(binding) {
         val listener = onClicks()
         startStop.setOnClickListener(listener)
     }
 
     //  Функция сработки слушателя нажатий на этом вью
-    private fun onClicks(): View.OnClickListener{
+    private fun onClicks(): View.OnClickListener {
         return View.OnClickListener {
-            when(it.id){
+            when (it.id) {
                 R.id.start_stop -> startStopService()
             }
         }
     }
 
 
-
-
-
-
-
-
     //  Обновление времени в tv_text с помощью обсервера, который слушает изменения в переменной timeData типа MutableLiveData<String>()
-    private fun updateTime(){
-        timeData.observe(viewLifecycleOwner){
+    private fun updateTime() {
+        timeData.observe(viewLifecycleOwner) {
             binding.tvTime.text = it
         }
     }
@@ -116,13 +122,13 @@ class MainFragment : Fragment() {
 
     //  Запуск таймера, который (если что-то там есть) возьмет startTime из LocationService.startTime
     //  И запускать нужно в основном потоке, иначе значения в текст вью меняться не будут!
-    private fun startTimer(){
+    private fun startTimer() {
         timer?.cancel()
         timer = Timer()
         startTime = LocationService.startTime
-        timer?.schedule(object : TimerTask(){
-            override fun run(){
-                activity?.runOnUiThread{
+        timer?.schedule(object : TimerTask() {
+            override fun run() {
+                activity?.runOnUiThread {
                     timeData.value = getCurrentTime()
                 }
             }
@@ -143,15 +149,17 @@ class MainFragment : Fragment() {
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun checkPermissionAfter10() {
         if (checkPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-            && checkPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) {
+            && checkPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+        ) {
 //            initOsm()
             checkLocationEnabled()
 
         } else {
-            pLauncher.launch(arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_BACKGROUND_LOCATION
-            )
+            pLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                )
             )
         }
     }
@@ -167,35 +175,36 @@ class MainFragment : Fragment() {
     }
 
     //    Определение включен ли GPS и вызов диалог менеджера, если выключен
-    private fun checkLocationEnabled(){
+    private fun checkLocationEnabled() {
         val lManager = activity?.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         val isEnabled = lManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-        if(!isEnabled){
+        if (!isEnabled) {
             DialogManager.showLocEnableDialog(activity as AppCompatActivity,
-                object: DialogManager.Listener{
+                object : DialogManager.Listener {
                     override fun onClick() {
                         startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
                     }
 
                 })
-        }else{
+        } else {
             showToast("Location enabled")
         }
     }
+
     //  Здесь получаем время следования по маршруту, если приложение закрыли и работал только сервис
     //  От текущего времени отнимаем стартовое (все в миллисекундах!!!)
-    private fun getCurrentTime(): String{
+    private fun getCurrentTime(): String {
         return "Elapsed time: ${TimeUtils.getTime(System.currentTimeMillis() - startTime)}"
     }
 
 
     //  Функция запуска и остановки сервиса, в зависимости от состояния переменной isServiceRunning
-    private fun startStopService(){
-        if(!isServiceRunning){
+    private fun startStopService() {
+        if (!isServiceRunning) {
 //            Здесь я подставил включение зеленой кнопки, зачем??????
             binding.startStop.setImageResource(R.drawable.ic_disalarm_green)
             startLocService()
-        }else{
+        } else {
             activity?.stopService(Intent(activity, LocationService::class.java))
             binding.startStop.setImageResource(R.drawable.ic_disalarm_green)
             timer?.cancel()
@@ -205,12 +214,12 @@ class MainFragment : Fragment() {
 
 
     //  Запуск сервиса, в зависимости от нажатия на кнопку "старт" или "стоп"
-    private fun startLocService(){
+    private fun startLocService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             activity?.startForegroundService(Intent(activity, LocationService::class.java))
 //            Здесь я подставил включение красной кнопки, зачем??????
             binding.startStop.setImageResource(R.drawable.ic_alarm_red)
-        }else{
+        } else {
             activity?.startService(Intent(activity, LocationService::class.java))
         }
         binding.startStop.setImageResource(R.drawable.ic_alarm_red)
@@ -218,18 +227,24 @@ class MainFragment : Fragment() {
         startTimer()
     }
 
+    private val receiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, i: Intent?) {
+            if (i?.action == LOC_MODEL_INTENT) {
+                val locModel = i.getSerializableExtra(LOC_MODEL_INTENT) as LocationModel
 
+            }
+        }
+    }
 
-
-
-
-
-
-
+    private fun registerLocReceiver() {
+        val locFilter = IntentFilter(LOC_MODEL_INTENT)
+        LocalBroadcastManager.getInstance(activity as AppCompatActivity)
+            .registerReceiver(receiver, locFilter)
+    }
 
     companion object {
 
         @JvmStatic
-        fun newInstance() =  MainFragment()
+        fun newInstance() = MainFragment()
     }
 }
