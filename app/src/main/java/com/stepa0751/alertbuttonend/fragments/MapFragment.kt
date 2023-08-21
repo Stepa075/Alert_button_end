@@ -3,8 +3,10 @@ package com.stepa0751.alertbuttonend.fragments
 
 import android.Manifest.permission.ACCESS_BACKGROUND_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
@@ -17,8 +19,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
-import com.stepa0751.alertbuttonend.R
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.stepa0751.alertbuttonend.databinding.FragmentMapBinding
+import com.stepa0751.alertbuttonend.location.LocationModel
 import com.stepa0751.alertbuttonend.location.LocationService
 import com.stepa0751.alertbuttonend.utils.DialogManager
 import com.stepa0751.alertbuttonend.utils.checkPermission
@@ -27,7 +30,6 @@ import org.osmdroid.config.Configuration
 import org.osmdroid.library.BuildConfig
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
-import java.util.Timer
 
 
 class MapFragment : Fragment() {
@@ -49,6 +51,7 @@ class MapFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         registerPermissions()
+        registerLocReceiver()
 
 
     }
@@ -142,6 +145,22 @@ class MapFragment : Fragment() {
             showToast("Location enabled")
         }
     }
+
+    private val receiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, i: Intent?) {
+            if (i?.action == LocationService.LOC_MODEL_INTENT) {
+                val locModel = i.getSerializableExtra(LocationService.LOC_MODEL_INTENT) as LocationModel
+
+            }
+        }
+    }
+
+    private fun registerLocReceiver() {
+        val locFilter = IntentFilter(LocationService.LOC_MODEL_INTENT)
+        LocalBroadcastManager.getInstance(activity as AppCompatActivity)
+            .registerReceiver(receiver, locFilter)
+    }
+
 
     companion object {
 

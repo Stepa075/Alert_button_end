@@ -1,16 +1,12 @@
 package com.stepa0751.alertbuttonend.fragments
 
 import android.Manifest
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,14 +14,11 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.MutableLiveData
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import com.google.android.gms.location.LocationCallback
 import com.stepa0751.alertbuttonend.R
 import com.stepa0751.alertbuttonend.databinding.FragmentMainBinding
-import com.stepa0751.alertbuttonend.location.LocationModel
 import com.stepa0751.alertbuttonend.location.LocationService
-import com.stepa0751.alertbuttonend.location.LocationService.Companion.LOC_MODEL_INTENT
 import com.stepa0751.alertbuttonend.utils.DialogManager
 import com.stepa0751.alertbuttonend.utils.TimeUtils
 import com.stepa0751.alertbuttonend.utils.checkPermission
@@ -62,7 +55,7 @@ class MainFragment : Fragment() {
         checkServiceState()
         setOnClicks()
         updateTime()
-        registerLocReceiver()
+
     }
 
     //  Когда возвращаемся в вью проверяем доступность местонахождения в телефоне
@@ -227,20 +220,6 @@ class MainFragment : Fragment() {
         startTimer()
     }
 
-    private val receiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, i: Intent?) {
-            if (i?.action == LOC_MODEL_INTENT) {
-                val locModel = i.getSerializableExtra(LOC_MODEL_INTENT) as LocationModel
-
-            }
-        }
-    }
-
-    private fun registerLocReceiver() {
-        val locFilter = IntentFilter(LOC_MODEL_INTENT)
-        LocalBroadcastManager.getInstance(activity as AppCompatActivity)
-            .registerReceiver(receiver, locFilter)
-    }
 
     companion object {
 

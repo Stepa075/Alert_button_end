@@ -5,7 +5,6 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
@@ -130,17 +129,18 @@ class LocationService : Service() {
                 latit = currentLocation.latitude.toFloat()
                 longit = currentLocation.longitude.toFloat()
                 sendLocData(locModel)
-                sendData()
+                sendDataAndLocation()
+                sendLocation()
 
 
             }
             lastLocation = currentLocation
 
 
-            Log.d(
-                "MyLog",
-                "Location: ${lResult.lastLocation?.latitude} : ${lResult.lastLocation?.longitude}"
-            )
+//            Log.d(
+//                "MyLog",
+//                "Location: ${lResult.lastLocation?.latitude} : ${lResult.lastLocation?.longitude}"
+//            )
 
         }
     }
@@ -172,18 +172,42 @@ class LocationService : Service() {
         )
     }
 
-    private fun sendData(){
+    private fun sendDataAndLocation(){
         val token = "5906286565:AAF71BxPYkX6sWpgz1wGTdtyKlnffROO3zE"
         val chat_id = "1001858191181"
-        var lat = latit.toString()
-        var lon = longit.toString()
-        val url = "https://api.telegram.org/bot5906286565:AAF71BxPYkX6sWpgz1wGTdtyKlnffROO3zE/sendmessage?chat_id=-1001858191181&text=${lat}, ${lon}"
+        val id_user_program = "0001"
+        val lat = latit.toString()
+        val lon = longit.toString()
+        val url = "https://api.telegram.org/bot${token}/sendmessage?chat_id=-${chat_id}&text=User ID: ${id_user_program}. Allert button pressed! Location: ${lat}, ${lon}"
         val queue = Volley.newRequestQueue(baseContext)
         val sRequest = StringRequest(
             Request.Method.GET,
             url, { response ->
                 Log.d("MyLog", "Response: ${response.subSequence(1, 10)}")
-                 //                val list = getWeatherByDays(response)
+//                val list = getWeatherByDays(response)
+//                dayList.value = list
+//                currentDay.value = list[0]
+            },
+            { Log.d("MyLog", "Error request: $it") }
+        )
+        queue.add(sRequest)
+
+    }
+
+
+    private fun sendLocation(){
+        val token = "5906286565:AAF71BxPYkX6sWpgz1wGTdtyKlnffROO3zE"
+        val chat_id = "1001858191181"
+        val lat = latit.toString()
+        val lon = longit.toString()
+//        val url = "https://api.telegram.org/bot${token}/sendmessage?chat_id=-${chat_id}&text=${lat}, ${lon}"
+        val url = "https://api.telegram.org/bot${token}/sendlocation?chat_id=-${chat_id}&latitude=${lat}&longitude=${lon}"
+        val queue = Volley.newRequestQueue(baseContext)
+        val sRequest = StringRequest(
+            Request.Method.GET,
+            url, { response ->
+                Log.d("MyLog", "Response: ${response.subSequence(1, 10)}")
+//                val list = getWeatherByDays(response)
 //                dayList.value = list
 //                currentDay.value = list[0]
             },
