@@ -27,5 +27,19 @@
             android:key="id_user_key"
             app:icon="@drawable/ic_id_user"
             app:summary="@string/update_id_summary"/>
+
+        <EditTextPreference
+            android:defaultValue=""
+            android:title="@string/update_chat_id"
+            android:key="chat_id_key"
+            app:icon="@drawable/ic_chat_id"
+            app:summary="@string/update_chat_id_summary"/>
+
+        <EditTextPreference
+            android:defaultValue=""
+            android:title="@string/token"
+            android:key="token_key"
+            app:icon="@drawable/ic_token"
+            app:summary="@string/token_summary"/>
     </PreferenceCategory>
 </PreferenceScreen>
